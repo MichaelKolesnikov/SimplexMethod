@@ -3,7 +3,7 @@ import copy
 from LinearAlgebra import PointVector, Matrix
 
 
-class SimplexMethod[T = float]:
+class SimplexMethod[T]:
     @staticmethod
     def transform_initial_conditions_into_operating_conditions(n_input, c_input, m_input, x_input, b_input):
         m = m_input
@@ -15,7 +15,6 @@ class SimplexMethod[T = float]:
         c = PointVector(*(c_input.coordinates + [0] * (m + 1)))
         b = b_input
         return n, m, basis_elements_numbers, c, x, b
-
 
     def __init__(self, n: int, m: int, basic_elements_numbers: list[int], c: PointVector[T], x: Matrix[T], b: PointVector[T]):
         self.n = n
@@ -29,44 +28,51 @@ class SimplexMethod[T = float]:
         self.delta: PointVector[T] = PointVector(*([0] * n))
         self.F: int = 0
         self.calculate_delta()
+        self.is_solved()
 
         self.pivot_column_index: int = 0
         self.pivots_string_index: int = 0
         self.pivot_element: T = 0
 
+    def change_x(self):
+        self.x = Matrix([
+            [self.x[i][j] - self.x[i][self.pivot_column_index] * self.x[self.pivots_string_index][
+                j] / self.pivot_element for j in range(self.n)]
+            if i != self.pivots_string_index else
+            [self.x[self.pivots_string_index][j] / self.pivot_element for j in range(self.n)]
+            for i in range(self.m)
+        ])
 
-    def go_to_next_step(self, show: bool = True):
-        self.calculate_all_pivots()
-        if show:
-            self.draw()
+    def change_b(self):
         for i in range(self.m):
             if i == self.pivots_string_index:
                 continue
             self.b[i] = self.b[i] - self.x[i][self.pivot_column_index] * self.b[self.pivots_string_index] / self.pivot_element
         self.b[self.pivots_string_index] /= self.pivot_element
 
-        self.x = Matrix([
-            [self.x[i][j] - self.x[i][self.pivot_column_index] * self.x[self.pivots_string_index][j] / self.pivot_element for j in range(self.n)]
-            if i != self.pivots_string_index else
-            [self.x[self.pivots_string_index][j] / self.pivot_element for j in range(self.n)]
-            for i in range(self.m)
-        ])
+    def go_to_next_step(self):
+        self.calculate_all_pivots()
+        self.draw()
+        self.change_b()
+        self.change_x()
         self.basic_elements_numbers[self.pivots_string_index] = self.pivot_column_index
         self.calculate_delta()
-        if self.delta.get_min() >= 0 and show:
+        self.is_solved()
+
+    def is_solved(self):
+        if self.delta.get_max() <= 0:
             print("This is it")
             self.draw()
             input()
-        else:
+        else: # exists delta[j] > 0 in this case
             for j in range(self.n):
-                if all(self.x[i][j] <= 0 for i in range(self.m)):
+                if self.delta[j] > 0 and all(self.x[i][j] <= 0 for i in range(self.m)):
                     self.draw()
                     print("""target no function limited from above in ODR""")
                     input()
 
-
     def calculate_all_pivots(self):
-        self.pivot_column_index = self.delta.get_index_of_min()
+        self.pivot_column_index = self.delta.get_index_of_max()
         full_column = self.x.get_column(self.pivot_column_index)
         self.reduced_cost = PointVector(*[
             self.b[i] / full_column[i] if full_column[i] else float("inf") for i in range(self.m)
@@ -79,7 +85,7 @@ class SimplexMethod[T = float]:
         self.F = sum(self.c[e] * self.b[i] for i, e in enumerate(self.basic_elements_numbers))
         for j in range(self.n):
             full_column = self.x.get_column(j)
-            self.delta[j] = sum(self.c[e] * full_column[i] for i, e in enumerate(self.basic_elements_numbers)) - self.c[j]
+            self.delta[j] = self.c[j] - sum(self.c[e] * full_column[i] for i, e in enumerate(self.basic_elements_numbers))
 
 
     def draw(self):
@@ -90,7 +96,7 @@ class SimplexMethod[T = float]:
             a = self.basic_elements_numbers[i]
             rows.append([f"A{a}", self.c[a]] + self.x.matrix[i] + [self.b[i], self.reduced_cost[i]])
 
-        # rows.append(["", "F"] + self.c.coordinates)
         rows.append(["", "delta"] + self.delta.coordinates + [self.F])
+        rows.append(["", "c"] + self.c.coordinates)
 
         print(tabulate(rows, headers=headers, tablefmt="grid"))

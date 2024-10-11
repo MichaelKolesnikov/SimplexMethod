@@ -16,8 +16,9 @@ def read_data_from_file(file_name: str):
 
 
 def main():
+    find_max = 0
     try:
-        n_input, c_input, m_input, x_input, b_input = read_data_from_file("input4.txt")
+        n_input, c_input, m_input, x_input, b_input = read_data_from_file("input2.txt")
     except FileNotFoundError as exception:
         print(exception)
         return 0
@@ -25,10 +26,12 @@ def main():
         print("Wrong format of data")
         print(exception)
         return 0
+    if not find_max:
+        c_input = -c_input
 
     s = SimplexMethod(
         *SimplexMethod.transform_initial_conditions_into_operating_conditions(
-            *read_data_from_file("input1.txt")
+            n_input, c_input, m_input, x_input, b_input
         )
     )
     while True:

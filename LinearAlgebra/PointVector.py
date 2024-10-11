@@ -1,6 +1,5 @@
 import math
 from typing import Union
-from fractions import Fraction
 
 class PointVector[T = float]:
     def __init__(self, *coordinates: T):

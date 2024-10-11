@@ -1,11 +1,10 @@
 import copy
-from fractions import Fraction
 from .PointVector import PointVector
 from .exception.WrongNumberOfColumnsException import WrongNumberOfColumnsException
 from .exception.WrongNumberOfStringsException import WrongNumberOfStringsException
 
 
-class Matrix[T = float]:
+class Matrix[T]:
     def __init__(self, matrix: list[list[T]]):
         self.m = len(matrix) # count of strings
         self.n = 0 # count of columns
@@ -50,7 +49,7 @@ class Matrix[T = float]:
     def dot(self, other):
         if isinstance(other, Matrix):
             c2 = list(zip(*other.matrix))
-            l_list: list = [[0 for j in range(self.n)] for i in range(self.m)]
+            l_list: list = [[0 for _c in range(self.n)] for _s in range(self.m)]
             for i in range(self.m):
                 for j in range(other.n):
                     l_list[i][j] = sum(map(lambda x: x[0] * x[1], list(zip(self.matrix[i], c2[j]))))
@@ -102,7 +101,7 @@ class Matrix[T = float]:
             raise Exception(f"Wrong index {column_number}, count of columns={self.n}")
         return PointVector(*[self.matrix[i][column_number] for i in range(self.m)])
 
-def bin_exp(x: int | float | Fraction | Matrix, degree: int) -> int | float | Matrix:
+def bin_exp(x: int | float | Matrix, degree: int) -> int | float | Matrix:
     if degree == 0:
         if isinstance(x, Matrix):
             return Matrix([[1 if i == j else 0 for j in range(x.n)] for i in range(x.m)])
