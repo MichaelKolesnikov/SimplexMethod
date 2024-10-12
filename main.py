@@ -16,7 +16,11 @@ def read_data_from_file(file_name: str):
 
 
 def main():
-    find_max = 0
+    find_max = not bool(input("Write not empty string to get min instead of max:\n"))
+    if find_max:
+        print("You choose max")
+    else:
+        print("You choose min")
     try:
         n_input, c_input, m_input, x_input, b_input = read_data_from_file("input2.txt")
     except FileNotFoundError as exception:
